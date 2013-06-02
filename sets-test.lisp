@@ -7,12 +7,6 @@
 (in-suite srfi-113)
 
 
-(define-syntax definev 
-  (syntax-rules ()
-    ((definev name val)
-     (kl:deflex name val))))
-
-
 (define-syntax t=
   (syntax-rules ()
     ((t= expr)
@@ -21,8 +15,8 @@
 
 (define-syntax ==
   (syntax-rules ()
-    ((== arg ***)
-     (is (current-test-comparator arg ***)))))
+    ((== arg cl:***)
+     (is (current-test-comparator arg cl:***)))))
 
 
 (define-syntax let-current-test-comparator 
@@ -31,12 +25,6 @@
      (cl:flet ((current-test-comparator (cl:&rest args)
                  (apply fn args)))
        body cl:***))))
-
-
-(define-syntax s=
-  (syntax-rules ()
-    ((s= arg cl:***)
-     (is (set=? arg cl:***)))))
 
 
 (define-syntax >_<
@@ -412,44 +400,49 @@
     (t= (integer-set-member? bignums2 6))))
 
 
-#|(test-group "isets/subisets"
-  (define integer-set2 (integer-set 10 1 2))
-  (define other-set2 (integer-set 10 1 2))
-  (define integer-set3 (integer-set 10 1 2 3))
-  (define integer-set4 (integer-set 10 1 2 3 4))
-  (define integer-setx (integer-set 100 10 20 30 40))
-  (t= (integer-set=? integer-set2 other-set2))
-  (t= (not (integer-set=? integer-set2 integer-set3)))
-  (t= (not (integer-set=? integer-set2 integer-set3 other-set2)))
-  (t= (integer-set<? integer-set2 integer-set3 integer-set4))
-  (t= (not (integer-set<? integer-set2 other-set2)))
-  (t= (integer-set<=? integer-set2 other-set2 integer-set3))
-  (t= (not (integer-set<=? integer-set2 integer-set3 other-set2)))
-  (t= (integer-set>? integer-set4 integer-set3 integer-set2))
-  (t= (not (integer-set>? integer-set2 other-set2)))
-  (t= (integer-set>=? integer-set3 other-set2 integer-set2))
-  (t= (not (integer-set>=? other-set2 integer-set3 integer-set2)))
-)|#
+(test isets/subisets
+  (let* ((integer-set2 (integer-set 10 1 2))
+         (other-set2 (integer-set 10 1 2))
+         (integer-set3 (integer-set 10 1 2 3))
+         (integer-set4 (integer-set 10 1 2 3 4))
+         #|(integer-setx (integer-set 100 10 20 30 40))|#)
+    (t= (integer-set=? integer-set2 other-set2))
+    (t= (not (integer-set=? integer-set2 integer-set3)))
+    (t= (not (integer-set=? integer-set2 integer-set3 other-set2)))
+    (t= (integer-set<? integer-set2 integer-set3 integer-set4))
+    (t= (not (integer-set<? integer-set2 other-set2)))
+    (t= (integer-set<=? integer-set2 other-set2 integer-set3))
+    (t= (not (integer-set<=? integer-set2 integer-set3 other-set2)))
+    (t= (integer-set>? integer-set4 integer-set3 integer-set2))
+    (t= (not (integer-set>? integer-set2 other-set2)))
+    (t= (integer-set>=? integer-set3 other-set2 integer-set2))
+    (t= (not (integer-set>=? other-set2 integer-set3 integer-set2)))))
 
-#|(test-group "isets/ops"
-  ;; Potentially mutable
-  (define abcd (integer-set 10 1 2 3 4))
-  (define efgh (integer-set 10 5 6 7 8))
-  (define abgh (integer-set 10 1 2 7 8))
-  ;; Never get a chance to be mutated
-  (define other-abcd (integer-set 10 1 2 3 4))
-  (define other-efgh (integer-set 10 5 6 7 8))
-  (define other-abgh (integer-set 10 1 2 7 8))
-  (define all (integer-set 10 1 2 3 4 5 6 7 8))
-  (define none (integer-set 10))
-  (define ab (integer-set 10 1 2))
-  (define cd (integer-set 10 3 4))
-  (define ef (integer-set 10 5 6))
-  (define gh (integer-set 10 7 8))
-  (define cdgh (integer-set 10 3 4 7 8))
-  (define abcdgh (integer-set 10 1 2 3 4 7 8))
-  (define abefgh (integer-set 10 1 2 5 6 7 8))
-  (parameterize ((current-test-comparator integer-set=?))
+(integer-set=? (integer-set 10 1 2 3 4 5 6 7 8)
+               (integer-set-union 
+                (integer-set 10 1 2 3 4)
+                (integer-set 10 5 6 7 8)))
+
+
+(test isets/ops
+  (let* (;; Potentially mutable
+        (abcd (integer-set 10 1 2 3 4))
+        (efgh (integer-set 10 5 6 7 8))
+        (abgh (integer-set 10 1 2 7 8))
+        ;; Never get a chance to be mutated
+        (other-abcd (integer-set 10 1 2 3 4))
+        #|(other-efgh (integer-set 10 5 6 7 8))|#
+        #|(other-abgh (integer-set 10 1 2 7 8))|#
+        (all (integer-set 10 1 2 3 4 5 6 7 8))
+        (none (integer-set 10))
+        (ab (integer-set 10 1 2))
+        (cd (integer-set 10 3 4))
+        #|(ef (integer-set 10 5 6))|#
+        (gh (integer-set 10 7 8))
+        (cdgh (integer-set 10 3 4 7 8))
+        (abcdgh (integer-set 10 1 2 3 4 7 8))
+        (abefgh (integer-set 10 1 2 5 6 7 8)))
+  (let-current-test-comparator #'integer-set=?
     (== all (integer-set-union abcd efgh))
     (== abcdgh (integer-set-union abcd abgh))
     (== abefgh (integer-set-union efgh abgh))
@@ -462,76 +455,74 @@
     (== cdgh (integer-set-xor abcd abgh))
     (== all (integer-set-xor abcd efgh))
     (== none (integer-set-xor abcd other-abcd))
-    (== "abcd smashed?" other-abcd abcd)
-    (== "efgh smashed?" other-efgh efgh)
-    (== "abgh smashed?" other-abgh abgh))
-)|#
-
-#|(test-group "isets/mismatch"
-  (define nums (integer-set 10 1 2 3))
-  (define bignums (integer-set 100 1 2 3))
-  (>_< (integer-set=? nums bignums))
-  (>_< (integer-set<? nums bignums))
-  (>_< (integer-set<=? nums bignums))
-  (>_< (integer-set>? nums bignums))
-  (>_< (integer-set>=? nums bignums))
-  (>_< (integer-set-union nums bignums))
-  (>_< (integer-set-intersection nums bignums))
-  (>_< (integer-set-difference nums bignums))
-  (>_< (integer-set-xor nums bignums))
-  (>_< (integer-set-union! nums bignums))
-  (>_< (integer-set-intersection! nums bignums))
-  (>_< (integer-set-difference! nums bignums))
-  (>_< (integer-set-xor! nums bignums))
-)|# ; end isets/mismatch
-
-#|(test-group "isets/whole"
-  (define whole (integer-set 20 1 2 3 4 5 6 7 8 9 10))
-  (define bottom (integer-set 20 1 2 3 4 5))
-  (define top (integer-set 20 6 7 8 9 10))
-  (define-values (topx bottomx)
-    (integer-set-partition big whole))
-  (parameterize ((current-test-comparator integer-set=?))
-    (== top (integer-set-filter big whole))
-    (== bottom (integer-set-remove big whole))
-    (== top topx)
-    (== bottom bottomx))
-  (== 5 (integer-set-count big whole))
-)|# ; end isets/whole
+    #|(== "abcd smashed?" other-abcd abcd)|#
+    #|(== "efgh smashed?" other-efgh efgh)|#
+    #|(== "abgh smashed?" other-abgh abgh)|#)))
 
 
-#|(test-group "isets/other"
-  (define all (make-universal-integer-set 10))
-  (== 10 (integer-set-size all))
-  (define bottom (integer-set 10 0 1 2 3 4))
-  (define top (integer-set 10 5 6 7 8 9))
-  (define top2 (integer-set 10 5 6 7 8 9))
-  (t= (not (integer-set-member? top 10)))
-  (t= (not (integer-set-member? top -10)))
-  (parameterize ((current-test-comparator integer-set=?))
-    (== top (integer-set-complement bottom))
-    (== bottom (integer-set-complement top))
-    (set! top2 (integer-set-complement! top2))
-    (== bottom top2))
-  (>_< (integer-set-add! top2 'x))
-  (>_< (integer-set-add! top 1.5))
-  (>_< (integer-set-add! top2 10))
-  (>_< (integer-set-add! top2 -1))
-  (t= (not (integer-set-member? top 10)))
-  (== 0 (integer-set-min bottom))
-  (== 0 (integer-set-delete-min! bottom))
-  ;; bottom is now {1, 2, 3, 4}
-  (== 1 (integer-set-min bottom))
-  (== 4 (integer-set-max bottom))
-  (== 4 (integer-set-delete-max! bottom))
-  ;; bottom is now {1, 2, 3}
-  (== 3 (integer-set-max bottom))
-  (define empty (make-integer-set 10))
-  (== #f (integer-set-min empty))
-  (== #f (integer-set-delete-min! empty))
-  (== #f (integer-set-max empty))
-  (== #f (integer-set-delete-max! empty))
-)|#
+(test isets/mismatch
+  (let* ((nums (integer-set 10 1 2 3))
+         (bignums (integer-set 100 1 2 3)))
+    (>_< (integer-set=? nums bignums))
+    (>_< (integer-set<? nums bignums))
+    (>_< (integer-set<=? nums bignums))
+    (>_< (integer-set>? nums bignums))
+    (>_< (integer-set>=? nums bignums))
+    (>_< (integer-set-union nums bignums))
+    (>_< (integer-set-intersection nums bignums))
+    (>_< (integer-set-difference nums bignums))
+    (>_< (integer-set-xor nums bignums))
+    (>_< (integer-set-union! nums bignums))
+    (>_< (integer-set-intersection! nums bignums))
+    (>_< (integer-set-difference! nums bignums))
+    (>_< (integer-set-xor! nums bignums))))
+
+
+(test isets/whole
+  (let* ((whole (integer-set 20 1 2 3 4 5 6 7 8 9 10))
+         (bottom (integer-set 20 1 2 3 4 5))
+         (top (integer-set 20 6 7 8 9 10)))
+    (cl:multiple-value-bind (topx bottomx)
+         (integer-set-partition #'big whole)
+      (let-current-test-comparator #'integer-set=?
+        (== top (integer-set-filter #'big whole))
+        (== bottom (integer-set-remove #'big whole))
+        (== top topx)
+        (== bottom bottomx))
+      (== 5 (integer-set-count #'big whole)))))
+
+
+(test isets/other
+  (let* ((all (make-universal-integer-set 10))
+         (bottom (integer-set 10 0 1 2 3 4))
+         (top (integer-set 10 5 6 7 8 9))
+         (top2 (integer-set 10 5 6 7 8 9))
+         (empty (make-integer-set 10)))
+    (== 10 (integer-set-size all))
+    (t= (not (integer-set-member? top 10)))
+    (t= (not (integer-set-member? top -10)))
+    (let-current-test-comparator #'integer-set=?
+      (== top (integer-set-complement bottom))
+      (== bottom (integer-set-complement top))
+      (set! top2 (integer-set-complement! top2))
+      (== bottom top2))
+    (>_< (integer-set-add! top2 'x))
+    (>_< (integer-set-add! top 1.5))
+    (>_< (integer-set-add! top2 10))
+    (>_< (integer-set-add! top2 -1))
+    (t= (not (integer-set-member? top 10)))
+    (== 0 (integer-set-min bottom))
+    (== 0 (integer-set-delete-min! bottom))
+    ;; bottom is now {1, 2, 3, 4}
+    (== 1 (integer-set-min bottom))
+    (== 4 (integer-set-max bottom))
+    (== 4 (integer-set-delete-max! bottom))
+    ;; bottom is now {1, 2, 3}
+    (== 3 (integer-set-max bottom))
+    (== cl:NIL (integer-set-min empty))
+    (== cl:NIL (integer-set-delete-min! empty))
+    (== cl:NIL (integer-set-max empty))
+    (== cl:NIL (integer-set-delete-max! empty))))
 
 #|(test-group "enums"
             (define capsym-type (make-enum-type '(A B C D E F G H)))
@@ -701,43 +692,46 @@
   (== 4 (enum-set-count big whole))
 )|# ; end enums/whole
 
-#|(test-group "enums/other"
-  (define ten (make-enum-type '(a b c d e f g h i j)))
-  (define all (make-universal-enum-set ten))
-  (== 10 (enum-set-size all))
-  (define bottom (enum-set ten 'a 'b 'c 'd 'e))
-  (define top (enum-set ten 'f 'g 'h 'i 'j))
-  (define top2 (enum-set ten 'f 'g 'h 'i 'j))
-  (t= (not (enum-set-member? top 'k)))
-  (parameterize ((current-test-comparator enum-set=?))
-    (== top (enum-set-complement bottom))
-    (== bottom (enum-set-complement top))
-    (set! top2 (enum-set-complement! top2))
-    (== bottom top2))
-  (>_< (enum-set-add! top2 10))
-  (>_< (enum-set-add! top2 'z))
-  (t= (not (enum-set-member? top 10)))
-  (== 'a (enum-set-min bottom))
-  (== 'a (enum-set-delete-min! bottom))
-  ;; bottom is now {b, c, d, e}
-  (== 'b (enum-set-min bottom))
-  (== 'e (enum-set-max bottom))
-  (== 'e (enum-set-delete-max! bottom))
-  ;; bottom is now {b, c, d}
-  (== 'd (enum-set-max bottom))
-  (define empty (make-enum-set ten))
-  (== #f (enum-set-min empty))
-  (== #f (enum-set-delete-min! empty))
-  (== #f (enum-set-max empty))
-  (== #f (enum-set-delete-max! empty))
-)|#
 
-#|(test-group "enums/projection"
-  (define small (make-enum-type '(a b c)))
-  (define big (make-enum-type '(a b c d e f)))
-  (define target (enum-set small 'b 'c))
-  (define source (enum-set big 'b 'c 'd 'e))
-  (t= (enum-set=? target (enum-set-projection source small)))
-)|#
+(test enums/other
+  (let* ((ten (make-enum-type '(a b c d e f g h i j)))
+         (all (make-universal-enum-set ten))
+         (bottom (enum-set ten 'a 'b 'c 'd 'e))
+         (top (enum-set ten 'f 'g 'h 'i 'j))
+         (top2 (enum-set ten 'f 'g 'h 'i 'j))
+         (empty (make-enum-set ten)))
+    (== 10 (enum-set-size all))
+    (t= (not (enum-set-member? top 'k)))
+    (let-current-test-comparator #'enum-set=?
+      (== top (enum-set-complement bottom))
+      (== bottom (enum-set-complement top))
+      (set! top2 (enum-set-complement! top2))
+      (== bottom top2))
+    (>_< (enum-set-add! top2 10))
+    (>_< (enum-set-add! top2 'z))
+    (t= (not (enum-set-member? top 10)))
+    (== 'a (enum-set-min bottom))
+    (== 'a (enum-set-delete-min! bottom))
+    ;; bottom is now {b, c, d, e}
+    (== 'b (enum-set-min bottom))
+    (== 'e (enum-set-max bottom))
+    (== 'e (enum-set-delete-max! bottom))
+    ;; bottom is now {b, c, d}
+    (== 'd (enum-set-max bottom))
+    (== cl:NIL (enum-set-min empty))
+    (== cl:NIL (enum-set-delete-min! empty))
+    (== cl:NIL (enum-set-max empty))
+    (== cl:NIL (enum-set-delete-max! empty))))
+
+
+(test enums/projection
+  (let* ((small (make-enum-type '(a b c)))
+         (big (make-enum-type '(a b c d e f)))
+         (target (enum-set small 'b 'c))
+         (source (enum-set big 'b 'c 'd 'e)))
+    (t= (enum-set=? target (enum-set-projection source small)))))
+
+
+;;; *EOF*
 
 
