@@ -39,13 +39,13 @@
   (hash-table-ref/default
     (bag-dict (bag-check b))
     e
-    'NIL))
+    'cl:NIL))
 
 ;; Add a new element.
 (define (bag-add! b e)
   (bag-increment! b e 1))
 
-;; Remove an element.  If the element was present, return #t, otherwise 'NIL.
+;; Remove an element.  If the element was present, return #t, otherwise 'cl:NIL.
 (define (bag-delete! b e)
   (bag-decrement! b e 1))
 
@@ -80,7 +80,7 @@
   (bag-decrement! b e (- n)))
 
 ;; Bag-specific: Decrement the number of times element appears in a bag
-;; (but not below zero).  Return 'NIL if element not present enough times.
+;; (but not below zero).  Return 'cl:NIL if element not present enough times.
 (define (bag-decrement! b e n)
   (let* ((old (bag-element-count b e))
          (new (- old n))
@@ -146,7 +146,7 @@
     (for-each (lambda (e) (bag-add! t e)) list)
     t))
 
-;; Return 'T if all bags are equal, 'NIL otherwise.
+;; Return 'T if all bags are equal, 'cl:NIL otherwise.
 (define (bag=? b . bags)
   (cond
     ((null? bags)
@@ -154,7 +154,7 @@
     ((dyadic-bag=? (bag-check b) (car bags))
      (apply #'bag=? (car bags) (cdr bags)))
     (else
-     'NIL)))
+     'cl:NIL)))
 
 ;; Internal: dyadic version of bag=?.
 (define (dyadic-bag=? b1 b2)
@@ -169,7 +169,7 @@
     ((dyadic-bag<? (bag-check b) (car bags))
      (apply #'bag<? (car bags) (cdr bags)))
     (else
-     'NIL)))
+     'cl:NIL)))
 
 ;; Internal: dyadic version of bag<?.
 (define (dyadic-bag<? b1 b2)
@@ -184,7 +184,7 @@
     ((dyadic-bag>? (bag-check b) (car bags))
      (apply #'bag>? (car bags) (cdr bags)))
     (else
-     'NIL)))
+     'cl:NIL)))
 
 ;; Internal: dyadic version of bag>?.
 (define (dyadic-bag>? b1 b2)
@@ -199,7 +199,7 @@
     ((dyadic-bag<=? (bag-check b) (car bags))
      (apply #'bag<=? (car bags) (cdr bags)))
     (else
-     'NIL)))
+     'cl:NIL)))
 
 ;; Internal: dyadic version of bag<=?.
 (define (dyadic-bag<=? b1 b2)
