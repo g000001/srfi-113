@@ -119,8 +119,8 @@
         (abgh (set #'eq? 'a 'b 'g 'h))
         ;; Never get a chance to be mutated
         (other-abcd (set #'eq? 'a 'b 'c 'd))
-        #|(other-efgh (set #'eq? 'e 'f 'g 'h))|#
-        #|(other-abgh (set #'eq? 'a 'b 'g 'h))|#
+        (other-efgh (set #'eq? 'e 'f 'g 'h))
+        (other-abgh (set #'eq? 'a 'b 'g 'h))
         (all (set #'eq? 'a 'b 'c 'd 'e 'f 'g 'h))
         (none (set #'eq?))
         (ab (set #'eq? 'a 'b))
@@ -143,11 +143,14 @@
       (== cdgh (set-xor abcd abgh))
       (== all (set-xor abcd efgh))
       (== none (set-xor abcd other-abcd))
-      ;;--- FIXME
-      ;; (== "abcd smashed?" other-abcd abcd)
-      ;; (== "efgh smashed?" other-efgh efgh)
-      ;; (== "abgh smashed?" other-abgh abgh)
-      )))
+      ;; "abcd smashed?"
+      (== other-abcd abcd)
+      ;; "abcd smashed?"
+      (== other-abcd abcd)
+      ;; "efgh smashed?"
+      (== other-efgh efgh)
+      ;; "abgh smashed?"
+      (== other-abgh abgh))))
 
 
 (test sets/mismatch
@@ -174,10 +177,11 @@
          (top (set #'eqv? 6 7 8 9 10)))
     (cl:multiple-value-bind (topx bottomx)
          (set-partition #'big whole)
-      (s= top (set-filter #'big whole))
-      (s= bottom (set-remove #'big whole))
-      (s= top topx)
-      (s= bottom bottomx)
+      (let-current-test-comparator #'set=?
+       (== top (set-filter #'big whole))
+       (== bottom (set-remove #'big whole))
+       (== top topx)
+       (== bottom bottomx))
       (== 5 (set-count #'big whole)))))
 
 
@@ -267,15 +271,15 @@
          (efgh (bag #'eq? 'e 'f 'g 'h))
          (abgh (bag #'eq? 'a 'b 'g 'h))
          ;; Never get a chance to be mutated
-         #|(other-abcd (bag #'eq? 'a 'b 'c 'd))|#
-         #|(other-efgh (bag #'eq? 'e 'f 'g 'h))|#
-         #|(other-abgh (bag #'eq? 'a 'b 'g 'h))|#
+         (other-abcd (bag #'eq? 'a 'b 'c 'd))
+         (other-efgh (bag #'eq? 'e 'f 'g 'h))
+         (other-abgh (bag #'eq? 'a 'b 'g 'h))
          (all (bag #'eq? 'a 'b 'c 'd 'e 'f 'g 'h))
          (none (bag #'eq?))
          (ab (bag #'eq? 'a 'b))
          (cd (bag #'eq? 'c 'd))
          #|(ef (bag #'eq? 'e 'f))|#
-         #|(gh (bag #'eq? 'g 'h))|#
+         (gh (bag #'eq? 'g 'h))
          #|(cdgh (bag #'eq? 'c 'd 'g 'h))|#
          (abcdgh (bag #'eq? 'a 'b 'c 'd 'g 'h))
          (abefgh (bag #'eq? 'a 'b 'e 'f 'g 'h)))
@@ -287,11 +291,14 @@
       (== ab (bag-intersection abcd abgh))
       (== ab (bag-intersection abgh abcd))
       (== cd (bag-difference abcd ab))
-      #|(== abcd (bag-difference abcd gh))|#
+      (== abcd (bag-difference abcd gh))
       (== none (bag-difference abcd abcd))
-      #|(== "abcd smashed?" other-abcd abcd)|#
-      #|(== "efgh smashed?" other-efgh efgh)|#
-      #|(== "abgh smashed?" other-abgh abgh)|#)))
+      ;; "abcd smashed?"
+      (== other-abcd abcd)
+      ;; "efgh smashed?"
+      (== other-efgh efgh)
+      ;; "abgh smashed?"
+      (== other-abgh abgh))))
 
 
 (test bags/mismatch
@@ -305,7 +312,8 @@
     (>_< (bag-union nums syms))
     (>_< (bag-intersection nums syms))
     (>_< (bag-difference nums syms))
-    ;; (>_< (bag-xor nums syms)) --- FIXME
+    ;; There are no procedures bag-xor, bag-xor!, or bag-value. 
+    ;; (>_< (bag-xor nums syms))
     (>_< (bag-union! nums syms))
     (>_< (bag-intersection! nums syms))
     (>_< (bag-difference! nums syms))))
@@ -431,8 +439,8 @@
         (abgh (integer-set 10 1 2 7 8))
         ;; Never get a chance to be mutated
         (other-abcd (integer-set 10 1 2 3 4))
-        #|(other-efgh (integer-set 10 5 6 7 8))|#
-        #|(other-abgh (integer-set 10 1 2 7 8))|#
+        (other-efgh (integer-set 10 5 6 7 8))
+        (other-abgh (integer-set 10 1 2 7 8))
         (all (integer-set 10 1 2 3 4 5 6 7 8))
         (none (integer-set 10))
         (ab (integer-set 10 1 2))
@@ -455,9 +463,12 @@
     (== cdgh (integer-set-xor abcd abgh))
     (== all (integer-set-xor abcd efgh))
     (== none (integer-set-xor abcd other-abcd))
-    #|(== "abcd smashed?" other-abcd abcd)|#
-    #|(== "efgh smashed?" other-efgh efgh)|#
-    #|(== "abgh smashed?" other-abgh abgh)|#)))
+    ;; "abcd smashed?"
+    (== other-abcd abcd)
+    ;; "efgh smashed?"
+    (== other-efgh efgh)
+    ;; "abgh smashed?"
+    (== other-abgh abgh))))
 
 
 (test isets/mismatch
@@ -524,173 +535,188 @@
     (== cl:NIL (integer-set-max empty))
     (== cl:NIL (integer-set-delete-max! empty))))
 
-#|(test-group "enums"
-            (define capsym-type (make-enum-type '(A B C D E F G H)))
-            (define sym-type (make-enum-type '(a b c d e f g h)))
-            (define (symbol-downcase s)
-              (string->symbol (string-downcase (symbol->string s))))
-            (define (symbol-append s1 s2)
-              (string->symbol (string-append (symbol->string s1) (symbol->string s2)))))|#
 
-#|(test-group "enums/simple"
-  (define capsyms (make-enum-set capsym-type))
-  ;; capsyms is now {}
-  (define syms (enum-set sym-type 'a 'b 'c 'd))
-  ;; syms is now {a, b, c, d}
-  (define capsyms2 (enum-set-copy capsyms))
-  ;; capsyms2 is now {}
-  (define syms2 (enum-set-copy syms))
-  ;; syms2 is now {a, b, c, d}
-  (define total 'z)
-  (t= (enum-set? capsyms))
-  (t= (enum-set? syms))
-  (t= (enum-set? capsyms2))
-  (t= (enum-set? syms2))
-  (t= (not (enum-set? 'a)))
-  (enum-set-add! capsyms 'B)
-  (enum-set-add! capsyms 'C)
-  (enum-set-add! capsyms 'D)
-  (enum-set-add! capsyms 'D)
-  ;; capsyms is now {B, C, D}
-  (== 3 (enum-set-size capsyms))
-  (== 4 (enum-set-size syms))
-  (== 0 (enum-set-size capsyms2))
-  (== 4 (enum-set-size syms2))
-  (t= (enum-set-delete! capsyms 'B))
-  ;; capsyms is now {C, D}
-  (t= (not (enum-set-delete! capsyms 'A)))
-  (== 2 (enum-set-size capsyms))
-  (set! capsyms2
-    (enum-set-map sym-type (lambda (x) (symbol-downcase x)) capsyms))
-  ;; capsyms2 is now {c, d} (and is of enum-type sym-type)
-  (t= (enum-set-member? capsyms2 'c))
-  (t= (not (enum-set-member? capsyms2 'C)))
-  (enum-set-for-each (lambda (x) (set! total (symbol-append total x))) capsyms2)
-  (== total 'zcd)
-  (== 'DCXYZ (enum-set-fold symbol-append 'XYZ capsyms))
-  (set! syms (enum-set sym-type 'a 'b 'c 'd 'e))
-  ;; syms is now {a, b, c, d, e}
-  (t=
-    (enum-set=? syms (enum-set-unfold sym-type
-       (lambda (i) (> i 96))
-       (lambda (i) (string->symbol (string (integer->char i))))
-       (lambda (i) (- i 1))
-       101)))
-  (== '(a) (enum-set->list (enum-set sym-type 'a)))
-  (set! syms2 (list->enum-set sym-type '(e f)))
-  ;; syms2 is now {e, f}
-  (== 2 (enum-set-size syms2))
-  (t= (enum-set-member? syms2 'e))
-  (t= (enum-set-member? syms2 'f))
-)|#
+(def-suite* enums :in srfi-113)
 
-#|(test-group "enums/types"
-  (== 2 (enum-type-index sym-type 'c))
-  (== '(a b c d e f g h) (enum-type-symbols sym-type))
-  (== #f (enum-type-index capsym-type 'c))
-  (t= (enum=? sym-type 'a 'a 'a))
-  (t= (not (enum=? sym-type 'a 'b 'c)))
-  (t= (enum<? sym-type 'a 'c 'e))
-  (t= (not (enum<? sym-type 'a 'a 'e)))
-  (t= (not (enum<? sym-type 'e 'c 'a)))
-  (t= (enum>? sym-type 'e 'c 'a))
-  (t= (not (enum>? sym-type 'e 'a 'a)))
-  (t= (not (enum>? sym-type 'a 'c 'e)))
-  (t= (enum<=? sym-type 'a 'c 'e))
-  (t= (enum<=? sym-type 'a 'a 'e))
-  (t= (not (enum<=? sym-type 'e 'c 'a)))
-  (t= (enum>=? sym-type 'e 'c 'a))
-  (t= (enum>=? sym-type 'e 'a 'a))
-  (t= (not (enum>=? sym-type 'a 'c 'e)))
-)|# ; end enums/ordering
 
-#|(test-group "enums/subenums"
-  (define enum-set2 (enum-set capsym-type 'A 'B))
-  (define other-set2 (enum-set capsym-type 'A 'B))
-  (define enum-set3 (enum-set capsym-type 'A 'B 'C))
-  (define enum-set4 (enum-set capsym-type 'A 'B 'C 'D))
-  (define enum-setx (enum-set sym-type 'a 'b 'c 'd))
-  (t= (enum-set=? enum-set2 other-set2))
-  (t= (not (enum-set=? enum-set2 enum-set3)))
-  (t= (not (enum-set=? enum-set2 enum-set3 other-set2)))
-  (t= (enum-set<? enum-set2 enum-set3 enum-set4))
-  (t= (not (enum-set<? enum-set2 other-set2)))
-  (t= (enum-set<=? enum-set2 other-set2 enum-set3))
-  (t= (not (enum-set<=? enum-set2 enum-set3 other-set2)))
-  (t= (enum-set>? enum-set4 enum-set3 enum-set2))
-  (t= (not (enum-set>? enum-set2 other-set2)))
-  (t= (enum-set>=? enum-set3 other-set2 enum-set2))
-  (t= (not (enum-set>=? other-set2 enum-set3 enum-set2)))
-)|#
+(cl:defvar capsym-type (make-enum-type '(|A| |B| |C| |D| |E| |F| |G| |H|)))
 
-#|(test-group "enums/ops"
+
+(cl:defvar sym-type (make-enum-type '(|a| |b| |c| |d| |e| |f| |g| |h|)))
+
+
+(define (symbol-downcase s)
+  (string->symbol (srfi-13:string-downcase (symbol->string s))))
+
+
+(define (symbol-append s1 s2)
+  (string->symbol (string-append (symbol->string s1) (symbol->string s2))))
+
+
+(test enums/simple
+  (let* (;; (capsyms (make-enum-set capsym-type))
+         (capsyms (make-enum-set capsym-type))
+         ;; capsyms is now {}
+         (syms (enum-set sym-type '|a| '|b| '|c| '|d|))
+         ;; syms is now {a, b, c, d}
+         (capsyms2 (enum-set-copy capsyms))
+         ;; capsyms2 is now {}
+         (syms2 (enum-set-copy syms))
+         ;; syms2 is now {a, b, c, d}
+         (total '|z|))
+    (t= (enum-set? capsyms))
+    (t= (enum-set? syms))
+    (t= (enum-set? capsyms2))
+    (t= (enum-set? syms2))
+    (t= (not (enum-set? '|a|)))
+    (enum-set-add! capsyms '|B|)
+    (enum-set-add! capsyms '|C|)
+    (enum-set-add! capsyms '|D|)
+    (enum-set-add! capsyms '|D|)
+    ;; capsyms is now {B, C, D}
+    (== 3 (enum-set-size capsyms))
+    (== 4 (enum-set-size syms))
+    (== 0 (enum-set-size capsyms2))
+    (== 4 (enum-set-size syms2))
+    (t= (enum-set-delete! capsyms '|B|))
+    ;; capsyms is now {C, D}
+    (t= (not (enum-set-delete! capsyms '|A|)))
+    (== 2 (enum-set-size capsyms))
+    (set! capsyms2
+          (enum-set-map sym-type (lambda (x) (symbol-downcase x)) capsyms))
+    ;; capsyms2 is now {c, d} (and is of enum-type sym-type)
+    (t= (enum-set-member? capsyms2 '|c|))
+    (t= (not (enum-set-member? capsyms2 '|C|)))
+    (enum-set-for-each (lambda (x) (set! total (symbol-append total x))) capsyms2)
+    (== total '|zcd|)
+    (== 'DCXYZ (enum-set-fold #'symbol-append '|XYZ| capsyms))
+    (set! syms (enum-set sym-type '|a| '|b| '|c| '|d| '|e|))
+    ;; syms is now {a, b, c, d, e}
+    (t=
+     (enum-set=? syms 
+                 (enum-set-unfold sym-type 
+                                  (lambda (i) (> i 96))
+                                  (lambda (i) 
+                                    (string->symbol (string (integer->char i))))
+                                  (lambda (i) (- i 1))
+                                  101)))
+    (== '(|a|) (enum-set->list (enum-set sym-type '|a|)))
+    (set! syms2 (list->enum-set sym-type '(|e| |f|)))
+    ;; syms2 is now {e, f}
+    (== 2 (enum-set-size syms2))
+    (t= (enum-set-member? syms2 '|e|))
+    (t= (enum-set-member? syms2 '|f|))))
+
+
+(test enums/types
+  (== 2 (enum-type-index sym-type '|c|))
+  (== '(|a| |b| |c| |d| |e| |f| |g| |h|) (enum-type-symbols sym-type))
+  (== cl:NIL (enum-type-index capsym-type '|c|))
+  (t= (enum=? sym-type '|a| '|a| '|a|))
+  (t= (not (enum=? sym-type '|a| '|b| '|c|)))
+  (t= (enum<? sym-type '|a| '|c| '|e|))
+  (t= (not (enum<? sym-type '|a| '|a| '|e|)))
+  (t= (not (enum<? sym-type '|e| '|c| '|a|)))
+  (t= (enum>? sym-type '|e| '|c| '|a|))
+  (t= (not (enum>? sym-type '|e| '|a| '|a|)))
+  (t= (not (enum>? sym-type '|a| '|c| '|e|)))
+  (t= (enum<=? sym-type '|a| '|c| '|e|))
+  (t= (enum<=? sym-type '|a| '|a| '|e|))
+  (t= (not (enum<=? sym-type '|e| '|c| '|a|)))
+  (t= (enum>=? sym-type '|e| '|c| '|a|))
+  (t= (enum>=? sym-type '|e| '|a| '|a|))
+  (t= (not (enum>=? sym-type '|a| '|c| '|e|))))
+
+
+(test enums/subenums
+  (let* ((enum-set2 (enum-set capsym-type '|A| '|B|))
+         (other-set2 (enum-set capsym-type '|A| '|B|))
+         (enum-set3 (enum-set capsym-type '|A| '|B| '|C|))
+         (enum-set4 (enum-set capsym-type '|A| '|B| '|C| '|D|))
+         #|(enum-setx (enum-set sym-type 'a 'b 'c 'd))|#)
+    (t= (enum-set=? enum-set2 other-set2))
+    (t= (not (enum-set=? enum-set2 enum-set3)))
+    (t= (not (enum-set=? enum-set2 enum-set3 other-set2)))
+    (t= (enum-set<? enum-set2 enum-set3 enum-set4))
+    (t= (not (enum-set<? enum-set2 other-set2)))
+    (t= (enum-set<=? enum-set2 other-set2 enum-set3))
+    (t= (not (enum-set<=? enum-set2 enum-set3 other-set2)))
+    (t= (enum-set>? enum-set4 enum-set3 enum-set2))
+    (t= (not (enum-set>? enum-set2 other-set2)))
+    (t= (enum-set>=? enum-set3 other-set2 enum-set2))
+    (t= (not (enum-set>=? other-set2 enum-set3 enum-set2)))))
+
+
+(test enums/ops
   ;; Potentially mutable
-  (define abcd (enum-set sym-type 'a 'b 'c 'd))
-  (define efgh (enum-set sym-type 'e 'f 'g 'h))
-  (define abgh (enum-set sym-type 'a 'b 'g 'h))
-  ;; Never get a chance to be mutated
-  (define other-abcd (enum-set sym-type 'a 'b 'c 'd))
-  (define other-efgh (enum-set sym-type 'e 'f 'g 'h))
-  (define other-abgh (enum-set sym-type 'a 'b 'g 'h))
-  (define all (enum-set sym-type 'a 'b 'c 'd 'e 'f 'g 'h))
-  (define none (enum-set sym-type))
-  (define ab (enum-set sym-type 'a 'b))
-  (define cd (enum-set sym-type 'c 'd))
-  (define ef (enum-set sym-type 'e 'f))
-  (define gh (enum-set sym-type 'g 'h))
-  (define cdgh (enum-set sym-type 'c 'd 'g 'h))
-  (define abcdgh (enum-set sym-type 'a 'b 'c 'd 'g 'h))
-  (define abefgh (enum-set sym-type 'a 'b 'e 'f 'g 'h))
-  (parameterize ((current-test-comparator enum-set=?))
-    (== all (enum-set-union abcd efgh))
-    (== abcdgh (enum-set-union abcd abgh))
-    (== abefgh (enum-set-union efgh abgh))
-    (== none (enum-set-intersection abcd efgh))
-    (== ab (enum-set-intersection abcd abgh))
-    (== ab (enum-set-intersection abgh abcd))
-    (== cd (enum-set-difference abcd ab))
-    (== abcd (enum-set-difference abcd gh))
-    (== none (enum-set-difference abcd abcd))
-    (== cdgh (enum-set-xor abcd abgh))
-    (== all (enum-set-xor abcd efgh))
-    (== none (enum-set-xor abcd other-abcd))
-    (== "abcd smashed?" other-abcd abcd)
-    (== "efgh smashed?" other-efgh efgh)
-    (== "abgh smashed?" other-abgh abgh))
-)|#
+  (let* ((abcd (enum-set sym-type '|a| '|b| '|c| '|d|))
+         (efgh (enum-set sym-type '|e| '|f| '|g| '|h|))
+         (abgh (enum-set sym-type '|a| '|b| '|g| '|h|))
+         ;; Never get a chance to be mutated
+         (other-abcd (enum-set sym-type '|a| '|b| '|c| '|d|))
+         (other-efgh (enum-set sym-type '|e| '|f| '|g| '|h|))
+         (other-abgh (enum-set sym-type '|a| '|b| '|g| '|h|))
+         (all (enum-set sym-type '|a| '|b| '|c| '|d| '|e| '|f| '|g| '|h|))
+         (none (enum-set sym-type))
+         (ab (enum-set sym-type '|a| '|b|))
+         (cd (enum-set sym-type '|c| '|d|))
+         #|(ef (enum-set sym-type '|e| '|f|))|#
+         (gh (enum-set sym-type '|g| '|h|))
+         (cdgh (enum-set sym-type '|c| '|d| '|g| '|h|))
+         (abcdgh (enum-set sym-type '|a| '|b| '|c| '|d| '|g| '|h|))
+         (abefgh (enum-set sym-type '|a| '|b| '|e| '|f| '|g| '|h|)))
+    (let-current-test-comparator #'enum-set=?
+      (== all (enum-set-union abcd efgh))
+      (== abcdgh (enum-set-union abcd abgh))
+      (== abefgh (enum-set-union efgh abgh))
+      (== none (enum-set-intersection abcd efgh))
+      (== ab (enum-set-intersection abcd abgh))
+      (== ab (enum-set-intersection abgh abcd))
+      (== cd (enum-set-difference abcd ab))
+      (== abcd (enum-set-difference abcd gh))
+      (== none (enum-set-difference abcd abcd))
+      (== cdgh (enum-set-xor abcd abgh))
+      (== all (enum-set-xor abcd efgh))
+      (== none (enum-set-xor abcd other-abcd))
+      ;; "abcd smashed?"
+      (== other-abcd abcd)
+      ;; "efgh smashed?"
+      (== other-efgh efgh)
+      ;; "abgh smashed?"
+      (== other-abgh abgh))))
 
-#|(test-group "enums/mismatch"
-  (define capsyms (enum-set capsym-type 'A 'B 'C))
-  (define syms (enum-set sym-type 'a 'b 'c))
-  (>_< (enum-set=? capsyms syms))
-  (>_< (enum-set<? capsyms syms))
-  (>_< (enum-set<=? capsyms syms))
-  (>_< (enum-set>? capsyms syms))
-  (>_< (enum-set>=? capsyms syms))
-  (>_< (enum-set-union capsyms syms))
-  (>_< (enum-set-intersection capsyms syms))
-  (>_< (enum-set-difference capsyms syms))
-  (>_< (enum-set-xor capsyms syms))
-  (>_< (enum-set-union! capsyms syms))
-  (>_< (enum-set-intersection! capsyms syms))
-  (>_< (enum-set-difference! capsyms syms))
-  (>_< (enum-set-xor! capsyms syms))
-)|#
 
-#|(test-group "enums/whole"
-  (define (big x) (string>? (symbol->string x) "d"))
-  (define whole (enum-set sym-type 'a 'b 'c 'd 'e 'f 'g 'h))
-  (define bottom (enum-set sym-type 'a 'b 'c 'd))
-  (define top (enum-set sym-type 'e 'f 'g 'h))
-  (define-values (topx bottomx)
-    (enum-set-partition big whole))
-  (parameterize ((current-test-comparator enum-set=?))
-    (== top (enum-set-filter big whole))
-    (== bottom (enum-set-remove big whole))
-    (== top topx)
-    (== bottom bottomx))
-  (== 4 (enum-set-count big whole))
-)|# ; end enums/whole
+(test enums/mismatch
+  (let* ((capsyms (enum-set capsym-type '|A| '|B| '|C|))
+         (syms (enum-set sym-type '|a| '|b| '|c|)))
+    (>_< (enum-set=? capsyms syms))
+    (>_< (enum-set<? capsyms syms))
+    (>_< (enum-set<=? capsyms syms))
+    (>_< (enum-set>? capsyms syms))
+    (>_< (enum-set>=? capsyms syms))
+    (>_< (enum-set-union capsyms syms))
+    (>_< (enum-set-intersection capsyms syms))
+    (>_< (enum-set-difference capsyms syms))
+    (>_< (enum-set-xor capsyms syms))
+    (>_< (enum-set-union! capsyms syms))
+    (>_< (enum-set-intersection! capsyms syms))
+    (>_< (enum-set-difference! capsyms syms))
+    (>_< (enum-set-xor! capsyms syms))))
+
+
+(test enums/whole
+  (cl:flet ((big (x) (string>? (symbol->string x) "d")))
+    (let* ((whole (enum-set sym-type '|a| '|b| '|c| '|d| '|e| '|f| '|g| '|h|))
+           (bottom (enum-set sym-type '|a| '|b| '|c| '|d|))
+           (top (enum-set sym-type '|e| '|f| '|g| '|h|)))
+      (cl:multiple-value-bind (topx bottomx)
+           (enum-set-partition #'big whole)
+        (let-current-test-comparator #'enum-set=?
+          (== top (enum-set-filter #'big whole))
+          (== bottom (enum-set-remove #'big whole))
+          (== top topx)
+          (== bottom bottomx))
+        (== 4 (enum-set-count #'big whole))))))
 
 
 (test enums/other

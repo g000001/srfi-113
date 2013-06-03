@@ -190,7 +190,8 @@
 (define (enum-set-map et proc es)
   (let ((t (make-enum-set et)))
     (enum-set-for-each (lambda (e) 
-                         (enum-set-add! t (cl:funcall proc e))) (enum-check es))
+                         (enum-set-add! t (cl:funcall proc e)))
+                       (enum-check es))
     t))
 
 ;; Return a list of the enum-set members.
