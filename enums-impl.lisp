@@ -431,9 +431,21 @@
   (enum-set-for-each (lambda (e) (display e out) (display #\space out)) es)
   (display ">" out))
 
+
+(cl:defmethod cl:print-object ((object &enum-set) stream)
+  (print-enum-set object stream))
+
+
 ;; Internal: print the contents of an enum-type, for debugging.
 (define (print-enum-type et out)
   (enum-type-check et)
   (display "#<enum-type " out)
   (display (sv et) out)
   (display ">" out))
+
+
+(cl:defmethod cl:print-object ((object &enum-type) stream)
+  (print-enum-type object stream))
+
+
+;;; *EOF*

@@ -361,4 +361,9 @@
   (integer-set-for-each (lambda (e) (display e out) (display #\space out)) is)
   (display ">" out))
 
+
+(cl:defmethod cl:print-object ((object &integer-set) stream)
+  (print-integer-set object stream))
+
+
 ;;; *EOF*

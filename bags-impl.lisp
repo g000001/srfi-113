@@ -326,4 +326,8 @@
   (display ">" out))
 
 
+(cl:defmethod cl:print-object ((object &bag) stream)
+  (print-bag object stream))
+
+
 ;;; *EOF*

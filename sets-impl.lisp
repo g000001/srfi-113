@@ -304,3 +304,10 @@
   (display "#<set " out)
   (set-for-each (lambda (e) (display e out) (display #\space out)) s)
   (display ">" out))
+
+
+(cl:defmethod cl:print-object ((object &set) stream)
+  (print-set object stream))
+
+
+;;; *EOF*
