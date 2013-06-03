@@ -1,4 +1,5 @@
 (cl:in-package :srfi-113.internal)
+(in-readtable :rnrs)
 
 ;;;; Implementation of count-up and count-down macros for SRFI xxx
 
@@ -14,7 +15,7 @@
   (cl:let ((name (cl:gensym "block-"))
            (arg (cl:gensym "arg-")))
     `(cl:block ,name
-       (cl:funcall ,f (cl:lambda (,arg)
+       (_,f (cl:lambda (,arg)
                         (cl:return-from ,name ,arg))))))
 
 

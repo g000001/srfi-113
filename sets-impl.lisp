@@ -1,4 +1,5 @@
 (cl:in-package :srfi-113.internal)
+(in-readtable :rnrs)
 
 ;;;; Implementation of sets for SRFI xxx
 
@@ -26,18 +27,18 @@
 (define (set-size s)
   (hash-table-size (set-dict (set-check s))))
 
-;; Return 'cl:T if an element e is a member of a set s.
+;; Return #t if an element e is a member of a set s.
 (define (set-member? s e)
   (hash-table-ref/default
     (set-dict (set-check s))
     e
-    'cl:NIL))
+    #f))
 
 ;; Add a new element.
 (define (set-add! s e)
-  (hash-table-set! (set-dict (set-check s)) e 'cl:T))
+  (hash-table-set! (set-dict (set-check s)) e #t))
 
-;; Remove an element.  If the element was present, return 'cl:T, otherwise 'cl:NIL.
+;; Remove an element.  If the element was present, return #t, otherwise #f.
 (define (set-delete! s e)
   (hash-table-delete! (set-dict (set-check s)) e))
 
@@ -46,13 +47,13 @@
   (hash-table-walk (set-dict (set-check s)) 
                    (lambda (k v)
                      (cl:declare (cl:ignore v))
-                     (cl:funcall proc k))))
+                     (_proc k))))
 
 ;; Set fold.  Returns nil if the set is empty.
 (define (set-fold proc nil s)
   (hash-table-fold
     (set-dict (set-check s))
-    (lambda (k v acc) (cl:declare (cl:ignore v)) (cl:funcall proc k acc))
+    (lambda (k v acc) (cl:declare (cl:ignore v)) (_proc k acc))
     nil))
 
 ;; Returns the member of a set which is the same (in the sense of the
@@ -62,7 +63,7 @@
     (cond
       ((null? keys)
        e)
-      ((cl:funcall (set-equality s) (car keys) e)
+      ((_(set-equality s) (car keys) e)
        (car keys))
       (else
        (loop (cdr keys))))))
@@ -76,7 +77,7 @@
 ;; Internal: signal an error if s1 and s2 have different equality predicates.
 (define (set-check-equalities s1 s2)
   (if (eq? (set-equality s1) (set-equality s2))
-    'cl:T
+    #t
     (error "Set set-equality predicate discrepancy" s1 s2)))
 
 
@@ -98,7 +99,7 @@
 ;; Map a function over a set.
 (define (set-map set-equality proc s)
   (let ((t (make-set set-equality)))
-    (set-for-each (lambda (e) (set-add! t (cl:funcall proc e))) (set-check s))
+    (set-for-each (lambda (e) (set-add! t (_proc e))) (set-check s))
     t))
 
 ;; Return a list of the set members.
@@ -111,60 +112,60 @@
     (for-each (lambda (e) (set-add! t e)) list)
     t))
 
-;; Return 'cl:T if all sets are equal, 'cl:NIL otherwise.
+;; Return #t if all sets are equal, #f otherwise.
 (define (set=? s . sets)
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-set=? (set-check s) (car sets))
      (apply #'set=? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of set=?.
 (define (dyadic-set=? s1 s2)
   (set-check-equalities s1 s2)
   (and (dyadic-set<=? s1 s2) (dyadic-set>=? s1 s2)))
 
-;; Return 'cl:T if each set is a proper subset of the following set.
+;; Return #t if each set is a proper subset of the following set.
 (define (set<? s . sets)
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-set<? (set-check s) (car sets))
      (apply #'set<? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of set<?.
 (define (dyadic-set<? s1 s2)
   (set-check-equalities s1 s2)
   (not (dyadic-set>=? s1 s2)))
 
-;; Return 'cl:T if each set is a proper superset of the following set.
+;; Return #t if each set is a proper superset of the following set.
 (define (set>? s . sets)
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-set>? (set-check s) (car sets))
      (apply #'set>? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of set>?.
 (define (dyadic-set>? s1 s2)
   (set-check-equalities s1 s2)
   (not (dyadic-set<=? s1 s2)))
 
-;; Return 'cl:T if each set is a subset (proper or improper) of the following set.
+;; Return #t if each set is a subset (proper or improper) of the following set.
 (define (set<=? s . sets)
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-set<=? (set-check s) (car sets))
      (apply #'set<=? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of set<=?.
 (define (dyadic-set<=? s1 s2)
@@ -173,19 +174,19 @@
     (lambda (return)
       (set-for-each
         (lambda (e)
-          (if (set-member? s2 e) 'cl:T (cl:funcall return 'cl:NIL)))
+          (if (set-member? s2 e) #t (_return #f)))
         s1)
-      'cl:T)))
+      #t)))
 
 (define (set>=? s . sets)
-;; Return 'cl:T if each set is a superset (proper or improper) of the following set.
+;; Return #t if each set is a superset (proper or improper) of the following set.
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-set>=? (set-check s) (car sets))
      (apply #'set=? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of set>=?.
 (define (dyadic-set>=? s1 s2)
@@ -223,7 +224,7 @@
   (set-check-equalities s1 s2)
   (set-for-each
     (lambda (e)
-      (if (set-member? s2 e) 'cl:T (set-delete! s1 e)))
+      (if (set-member? s2 e) #t (set-delete! s1 e)))
     s1)
   s1)
 
@@ -258,24 +259,24 @@
 (define (set-unfold equivalence continue? mapper successor seed)
   (let loop ((s (make-set equivalence))
              (seed seed))
-    (if (cl:funcall continue? seed)
-      (let ((r (cl:funcall mapper seed)))
+    (if (_continue? seed)
+      (let ((r (_mapper seed)))
         (set-add! s r)
-        (loop s (cl:funcall successor seed)))
+        (loop s (_successor seed)))
       s)))
 
 ;; Filter and partition set
 (define (set-filter proc s)
   (let ((t (set-empty-copy s)))
     (set-for-each
-      (lambda (x) (if (cl:funcall proc x) (set-add! t x)))
+      (lambda (x) (if (_proc x) (set-add! t x)))
       s)
     t))
 
 (define (set-remove proc s)
   (let ((t (set-empty-copy s)))
     (set-for-each
-      (lambda (x) (if (not (cl:funcall proc x)) (set-add! t x)))
+      (lambda (x) (if (not (_proc x)) (set-add! t x)))
       s)
     t))
 
@@ -284,7 +285,7 @@
         (no (set-empty-copy s)))
     (set-for-each
       (lambda (x)
-        (if (cl:funcall proc x) (set-add! yes x) (set-add! no x)))
+        (if (_proc x) (set-add! yes x) (set-add! no x)))
       s)
     (values yes no)))
 
@@ -293,7 +294,7 @@
   (let ((n 0))
     (set-for-each
       (lambda (x)
-        (if (cl:funcall proc x) (set! n (+ n 1))))
+        (if (_proc x) (set! n (+ n 1))))
       s)
     n))
 

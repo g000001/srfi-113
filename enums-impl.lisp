@@ -1,4 +1,5 @@
 (cl:in-package :srfi-113.internal)
+(in-readtable :rnrs)
 
 ;;;; Implementation of enum sets for SRFI xxx
 
@@ -24,15 +25,15 @@
 
 ;;; These procedures directly depend on the underlying representation.
 
-;; Return the index of a symbol in an enum-set, or 'cl:NIL if none
+;; Return the index of a symbol in an enum-set, or #f if none
 (define (enum-type-index et sym)
   (let ((sv (sv (enum-type-check et))))
-    (count-up (return 'cl:NIL) (i 0 (vector-length sv))
+    (count-up (return #f) (i 0 (vector-length sv))
       (if (eq? sym (vector-ref sv i))
-        (cl:funcall return i)))))
+        (_return i)))))
 
 ;; Internal: Return the index of a symbol in the type of an enum-set,
-;; or 'cl:NIL if none
+;; or #f if none
 (define (enum-set-index es sym)
   (enum-type-index (enum-type es) sym))
 
@@ -81,10 +82,10 @@
         (set! count (+ count 1))))
     count))
 
-;; Return 'cl:T if an element e is a member of an enum-set es.
+;; Return #t if an element e is a member of an enum-set es.
 (define (enum-set-member? es e)
   (let ((i (enum-set-index (enum-check es) e)))
-    (if i (integer-set-member? (enum-is es) i) 'cl:NIL)))
+    (if i (integer-set-member? (enum-is es) i) #f)))
 
 ;; Add a new element.
 (define (enum-set-add! es e)
@@ -92,7 +93,7 @@
     (enum-is (enum-check-member es e))
     (enum-set-index es e)))
 
-;; Remove an element.  If the element was present, return 'cl:T, otherwise 'cl:NIL.
+;; Remove an element.  If the element was present, return #t, otherwise #f.
 (define (enum-set-delete! es e)
   (integer-set-delete!
     (enum-is (enum-check-member es e))
@@ -103,7 +104,7 @@
   (let ((enum-is (enum-is (enum-check es)))
         (sv (sv (enum-type es))))
     (integer-set-for-each
-      (lambda (i) (cl:funcall proc (vector-ref sv i)))
+      (lambda (i) (_proc (vector-ref sv i)))
       enum-is)))
 
 ;; Enum-set fold.  Returns nil if the enum-set is empty.
@@ -111,7 +112,7 @@
   (let ((enum-is (enum-is (enum-check es)))
         (sv (sv (enum-type es))))
     (integer-set-fold
-      (lambda (i acc) (cl:funcall proc (vector-ref sv i) acc))
+      (lambda (i acc) (_proc (vector-ref sv i) acc))
       nil
       enum-is)))
 
@@ -137,25 +138,25 @@
   (enum-check es)
   (let ((et (enum-type es))
         (result (integer-set-min (enum-is es))))
-    (if result (vector-ref (sv et) result) 'cl:NIL)))
+    (if result (vector-ref (sv et) result) #f)))
 
 (define (enum-set-max es)
   (enum-check es)
   (let ((et (enum-type es))
         (result (integer-set-max (enum-is es))))
-    (if result (vector-ref (sv et) result) 'cl:NIL)))
+    (if result (vector-ref (sv et) result) #f)))
 
 (define (enum-set-delete-min! es)
   (enum-check es)
   (let ((et (enum-type es))
         (result (integer-set-delete-min! (enum-is es))))
-    (if result (vector-ref (sv et) result) 'cl:NIL)))
+    (if result (vector-ref (sv et) result) #f)))
 
 (define (enum-set-delete-max! es)
   (enum-check es)
   (let ((et (enum-type es))
         (result (integer-set-delete-max! (enum-is es))))
-    (if result (vector-ref (sv et) result) 'cl:NIL)))
+    (if result (vector-ref (sv et) result) #f)))
 
 ;;; These procedures do not directly depend on the underlying representation.
 
@@ -176,7 +177,7 @@
 ;; Internal: check that the ets of is1 and is2 are the same.
 (define (enum-check-types is1 is2)
   (if (eq? (enum-type is1) (enum-type is2))
-    'cl:T
+    #t
     (error "Enum-sets have different enum-types" is1 is2)))
 
 ;; Create an enum-set with a specified enum-type and populate it.
@@ -190,7 +191,7 @@
 (define (enum-set-map et proc es)
   (let ((t (make-enum-set et)))
     (enum-set-for-each (lambda (e) 
-                         (enum-set-add! t (cl:funcall proc e)))
+                         (enum-set-add! t (_proc e)))
                        (enum-check es))
     t))
 
@@ -204,60 +205,60 @@
     (for-each (lambda (e) (enum-set-add! t e)) list)
     t))
 
-;; Return 'cl:T if all sets are equal, 'cl:NIL otherwise.
+;; Return #t if all sets are equal, #f otherwise.
 (define (enum-set=? es . sets)
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-enum-set=? (enum-check es) (car sets))
      (apply #'enum-set=? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of enum-set=?.
 (define (dyadic-enum-set=? is1 is2)
   (enum-check-types is1 is2)
   (and (dyadic-enum-set<=? is1 is2) (dyadic-enum-set>=? is1 is2)))
 
-;; Return 'cl:T if each enum-set is a proper subset of the following enum-set.
+;; Return #t if each enum-set is a proper subset of the following enum-set.
 (define (enum-set<? es . sets)
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-enum-set<? (enum-check es) (car sets))
      (apply #'enum-set<? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of enum-set<?.
 (define (dyadic-enum-set<? is1 is2)
   (enum-check-types is1 is2)
   (not (dyadic-enum-set>=? is1 is2)))
 
-;; Return 'cl:T if each enum-set is a proper superset of the following enum-set.
+;; Return #t if each enum-set is a proper superset of the following enum-set.
 (define (enum-set>? es . sets)
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-enum-set>? (enum-check es) (car sets))
      (apply #'enum-set>? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of enum-set>?.
 (define (dyadic-enum-set>? is1 is2)
   (enum-check-types is1 is2)
   (not (dyadic-enum-set<=? is1 is2)))
 
-;; Return 'cl:T if each enum-set is a subset (proper or improper) of the following enum-set.
+;; Return #t if each enum-set is a subset (proper or improper) of the following enum-set.
 (define (enum-set<=? es . sets)
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-enum-set<=? (enum-check es) (car sets))
      (apply #'enum-set<=? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of enum-set<=?.
 (define (dyadic-enum-set<=? is1 is2)
@@ -266,19 +267,19 @@
     (lambda (return)
       (enum-set-for-each
         (lambda (e)
-          (if (enum-set-member? is2 e) 'cl:T (cl:funcall return 'cl:NIL)))
+          (if (enum-set-member? is2 e) #t (_return #f)))
         is1)
-      'cl:T)))
+      #t)))
 
 (define (enum-set>=? es . sets)
-;; Return 'cl:T if each enum-set is a superset (proper or improper) of the following enum-set.
+;; Return #t if each enum-set is a superset (proper or improper) of the following enum-set.
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-enum-set>=? (enum-check es) (car sets))
      (apply #'enum-set=? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of enum-set>=?.
 (define (dyadic-enum-set>=? is1 is2)
@@ -316,7 +317,7 @@
   (enum-check-types is1 is2)
   (enum-set-for-each
     (lambda (e)
-      (if (enum-set-member? is2 e) 'cl:T (enum-set-delete! is1 e)))
+      (if (enum-set-member? is2 e) #t (enum-set-delete! is1 e)))
     is1)
   is1)
 
@@ -384,24 +385,24 @@
 (define (enum-set-unfold et continue? mapper successor seed)
   (let loop ((s (make-enum-set et))
              (seed seed))
-    (if (cl:funcall continue? seed)
-      (let ((r (cl:funcall mapper seed)))
+    (if (_continue? seed)
+      (let ((r (_mapper seed)))
         (enum-set-add! s r)
-        (loop s (cl:funcall successor seed)))
+        (loop s (_successor seed)))
       s)))
 
 ;; Filter and partition enum-set
 (define (enum-set-filter proc s)
   (let ((t (enum-set-empty-copy s)))
     (enum-set-for-each
-      (lambda (x) (if (cl:funcall proc x) (enum-set-add! t x)))
+      (lambda (x) (if (_proc x) (enum-set-add! t x)))
       s)
     t))
 
 (define (enum-set-remove proc s)
   (let ((t (enum-set-empty-copy s)))
     (enum-set-for-each
-      (lambda (x) (if (not (cl:funcall proc x)) (enum-set-add! t x)))
+      (lambda (x) (if (not (_proc x)) (enum-set-add! t x)))
       s)
     t))
 
@@ -410,7 +411,7 @@
         (no (enum-set-empty-copy s)))
     (enum-set-for-each
       (lambda (x)
-        (if (cl:funcall proc x) (enum-set-add! yes x) (enum-set-add! no x)))
+        (if (_proc x) (enum-set-add! yes x) (enum-set-add! no x)))
       s)
     (values yes no)))
 
@@ -419,7 +420,7 @@
   (let ((n 0))
     (enum-set-for-each
       (lambda (x)
-        (if (cl:funcall proc x) (set! n (+ n 1))))
+        (if (_proc x) (set! n (+ n 1))))
       es)
     n))
 

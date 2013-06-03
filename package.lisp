@@ -51,6 +51,7 @@
   (:use :srfi-113 :rnrs :fiveam
         :srfi-69 :srfi-9 :srfi-23
         :srfi-4 
-        :mbe)
+        :mbe
+        :named-readtables)
   (:import-from :5am :def-suite*))
 

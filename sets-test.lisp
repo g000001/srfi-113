@@ -1,5 +1,5 @@
 (cl:in-package :srfi-113.internal)
-
+(in-readtable :rnrs)
 
 (def-suite srfi-113)
 
@@ -530,10 +530,10 @@
     (== 4 (integer-set-delete-max! bottom))
     ;; bottom is now {1, 2, 3}
     (== 3 (integer-set-max bottom))
-    (== cl:NIL (integer-set-min empty))
-    (== cl:NIL (integer-set-delete-min! empty))
-    (== cl:NIL (integer-set-max empty))
-    (== cl:NIL (integer-set-delete-max! empty))))
+    (== #f (integer-set-min empty))
+    (== #f (integer-set-delete-min! empty))
+    (== #f (integer-set-max empty))
+    (== #f (integer-set-delete-max! empty))))
 
 
 (def-suite* enums :in srfi-113)
@@ -611,7 +611,7 @@
 (test enums/types
   (== 2 (enum-type-index sym-type '|c|))
   (== '(|a| |b| |c| |d| |e| |f| |g| |h|) (enum-type-symbols sym-type))
-  (== cl:NIL (enum-type-index capsym-type '|c|))
+  (== #f (enum-type-index capsym-type '|c|))
   (t= (enum=? sym-type '|a| '|a| '|a|))
   (t= (not (enum=? sym-type '|a| '|b| '|c|)))
   (t= (enum<? sym-type '|a| '|c| '|e|))
@@ -744,10 +744,10 @@
     (== 'e (enum-set-delete-max! bottom))
     ;; bottom is now {b, c, d}
     (== 'd (enum-set-max bottom))
-    (== cl:NIL (enum-set-min empty))
-    (== cl:NIL (enum-set-delete-min! empty))
-    (== cl:NIL (enum-set-max empty))
-    (== cl:NIL (enum-set-delete-max! empty))))
+    (== #f (enum-set-min empty))
+    (== #f (enum-set-delete-min! empty))
+    (== #f (enum-set-max empty))
+    (== #f (enum-set-delete-max! empty))))
 
 
 (test enums/projection

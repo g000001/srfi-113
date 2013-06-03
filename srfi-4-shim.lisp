@@ -1,4 +1,5 @@
 (cl:in-package :srfi-113.internal)
+(in-readtable :rnrs)
 
 ;;;; Shim implementing R7RS bytevectors for SRFI 4 systems such as Chicken
 
@@ -20,6 +21,6 @@
 
 (define (bytevector-for-each proc bv)
   (count-up (i 0 (bytevector-length bv))
-    (cl:funcall proc (bytevector-u8-ref bv i))))
+    (_proc (bytevector-u8-ref bv i))))
 
 ;;; *EOF*

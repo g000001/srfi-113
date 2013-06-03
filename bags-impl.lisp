@@ -1,5 +1,5 @@
 (cl:in-package :srfi-113.internal)
-
+(in-readtable :rnrs)
 
 ;;;; Implementation of bags for SRFI xxx
 
@@ -39,13 +39,13 @@
   (hash-table-ref/default
     (bag-dict (bag-check b))
     e
-    'cl:NIL))
+    #f))
 
 ;; Add a new element.
 (define (bag-add! b e)
   (bag-increment! b e 1))
 
-;; Remove an element.  If the element was present, return #t, otherwise 'cl:NIL.
+;; Remove an element.  If the element was present, return #t, otherwise #f.
 (define (bag-delete! b e)
   (bag-decrement! b e 1))
 
@@ -58,9 +58,9 @@
 ;; Internal:  walk each identical element
 (define (each-element proc e n)
   (if (= n 0)
-    'T
+    #t
     (begin
-      (cl:funcall proc e)
+      (_proc e)
       (each-element proc e (- n 1)))))
 
 ;; Bag fold.  Returns nil if the bag is empty.
@@ -68,7 +68,7 @@
 (define (bag-fold proc nil b)
   (hash-table-fold
     (bag-dict (bag-check b))
-    (lambda (k v acc) (cl:declare (cl:ignore v)) (cl:funcall proc k acc))
+    (lambda (k v acc) (cl:declare (cl:ignore v)) (_proc k acc))
     nil))
 
 ;; Bag-specific: Count the number of times element appears in a bag.
@@ -80,7 +80,7 @@
   (bag-decrement! b e (- n)))
 
 ;; Bag-specific: Decrement the number of times element appears in a bag
-;; (but not below zero).  Return 'cl:NIL if element not present enough times.
+;; (but not below zero).  Return #f if element not present enough times.
 (define (bag-decrement! b e n)
   (let* ((old (bag-element-count b e))
          (new (- old n))
@@ -97,7 +97,7 @@
     (cond
       ((null? keys)
        e)
-      ((cl:funcall (bag-equality b) (car keys) e)
+      ((_(bag-equality b) (car keys) e)
        (car keys))
       (else
        (loop (cdr keys))))))
@@ -115,7 +115,7 @@
 ;; Internal: signal an error if b1 and b2 have different equality predicates.
 (define (bag-check-equalities b1 b2)
   (if (eq? (bag-equality b1) (bag-equality b2))
-    'T
+    #t
     (error "Bag equality predicate discrepancy" b1 b2)))
 
 ;; Return a copy of a bag, using the same equality predicate.
@@ -133,7 +133,7 @@
 ;; Map a function over a bag.
 (define (bag-map bag-equality proc b)
   (let ((t (make-bag bag-equality)))
-    (bag-for-each (lambda (e) (bag-add! t (cl:funcall proc e))) (bag-check b))
+    (bag-for-each (lambda (e) (bag-add! t (_proc e))) (bag-check b))
     t))
 
 ;; Return a list of the bag members.
@@ -146,60 +146,60 @@
     (for-each (lambda (e) (bag-add! t e)) list)
     t))
 
-;; Return 'T if all bags are equal, 'cl:NIL otherwise.
+;; Return #t if all bags are equal, #f otherwise.
 (define (bag=? b . bags)
   (cond
     ((null? bags)
-     'T)
+     #t)
     ((dyadic-bag=? (bag-check b) (car bags))
      (apply #'bag=? (car bags) (cdr bags)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of bag=?.
 (define (dyadic-bag=? b1 b2)
   (bag-check-equalities b1 b2)
   (and (dyadic-bag<=? b1 b2) (dyadic-bag>=? b1 b2)))
 
-;; Return 'T if each bag is a proper subset of the following bag.
+;; Return #t if each bag is a proper subset of the following bag.
 (define (bag<? b . bags)
   (cond
     ((null? bags)
-     'T)
+     #t)
     ((dyadic-bag<? (bag-check b) (car bags))
      (apply #'bag<? (car bags) (cdr bags)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of bag<?.
 (define (dyadic-bag<? b1 b2)
   (bag-check-equalities b1 b2)
   (not (dyadic-bag>=? b1 b2)))
 
-;; Return 'T if each bag is a proper superset of the following bag.
+;; Return #t if each bag is a proper superset of the following bag.
 (define (bag>? b . bags)
   (cond
     ((null? bags)
-     'T)
+     #t)
     ((dyadic-bag>? (bag-check b) (car bags))
      (apply #'bag>? (car bags) (cdr bags)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of bag>?.
 (define (dyadic-bag>? b1 b2)
   (bag-check-equalities b1 b2)
   (not (dyadic-bag<=? b1 b2)))
 
-;; Return 'T if each bag is a subset (proper or improper) of the following bag.
+;; Return #t if each bag is a subset (proper or improper) of the following bag.
 (define (bag<=? b . bags)
   (cond
     ((null? bags)
-     'T)
+     #t)
     ((dyadic-bag<=? (bag-check b) (car bags))
      (apply #'bag<=? (car bags) (cdr bags)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of bag<=?.
 (define (dyadic-bag<=? b1 b2)
@@ -207,19 +207,19 @@
   (cl:block cl:nil
     (bag-for-each
         (lambda (e)
-          (if (bag-member? b2 e) 'T (cl:return 'cl:NIL)))
+          (if (bag-member? b2 e) #t (cl:return #f)))
         b1)
-    'T))
+    #t))
 
 (define (bag>=? b . bags)
-;; Return 'T if each bag is a superset (proper or improper) of the following bag.
+;; Return #t if each bag is a superset (proper or improper) of the following bag.
   (cond
     ((null? bags)
-     'T)
+     #t)
     ((dyadic-bag>=? (bag-check b) (car bags))
      (apply #'bag=? (car bags) (cdr bags)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of bag>=?.
 (define (dyadic-bag>=? b1 b2)
@@ -257,7 +257,7 @@
   (bag-check-equalities b1 b2)
   (bag-for-each
     (lambda (e)
-      (if (bag-member? b2 e) 'cl:T (bag-delete! b1 e)))
+      (if (bag-member? b2 e) #t (bag-delete! b1 e)))
     b1)
   b1)
 
@@ -279,24 +279,24 @@
 (define (bag-unfold equivalence continue? mapper successor seed)
   (let loop ((s (make-bag equivalence))
              (seed seed))
-    (if (cl:funcall continue? seed)
-      (let ((r (cl:funcall mapper seed)))
+    (if (_continue? seed)
+      (let ((r (_mapper seed)))
         (bag-add! s r)
-        (loop s (cl:funcall successor seed)))
+        (loop s (_successor seed)))
       s)))
 
 ;; Filter and partition bag
 (define (bag-filter proc s)
   (let ((t (bag-empty-copy s)))
     (bag-for-each
-      (lambda (x) (if (cl:funcall proc x) (bag-add! t x)))
+      (lambda (x) (if (_proc x) (bag-add! t x)))
       s)
     t))
 
 (define (bag-remove proc s)
   (let ((t (bag-empty-copy s)))
     (bag-for-each
-      (lambda (x) (if (not (cl:funcall proc x)) (bag-add! t x)))
+      (lambda (x) (if (not (_proc x)) (bag-add! t x)))
       s)
     t))
 
@@ -305,7 +305,7 @@
         (no (bag-empty-copy s)))
     (bag-for-each
       (lambda (x)
-        (if (cl:funcall proc x) (bag-add! yes x) (bag-add! no x)))
+        (if (_proc x) (bag-add! yes x) (bag-add! no x)))
       s)
     (values yes no)))
 
@@ -314,7 +314,7 @@
   (let ((n 0))
     (bag-for-each
       (lambda (x)
-        (if (cl:funcall proc x) (set! n (+ n 1))))
+        (if (_proc x) (set! n (+ n 1))))
        b)
     n))
 

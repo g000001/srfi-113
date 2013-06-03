@@ -1,4 +1,5 @@
 (cl:in-package :srfi-113.internal)
+(in-readtable :rnrs)
 
 ;;;; Implementation of integer sets for SRFI xxx
 
@@ -38,17 +39,17 @@
         (set! count (+ count 1))))
     count))
 
-;; Return 'cl:T if an element e is a member of the integer-set is.
+;; Return #t if an element e is a member of the integer-set is.
 (define (integer-set-member? is n)
   (if (and (number? n) (exact? n) (>= n 0) (< n (limit (iset-check is))))
     (= 1 (bytevector-u8-ref (bv is) n))
-    'cl:NIL))
+    #f))
 
 ;; Add a new element.
 (define (integer-set-add! is e)
   (bytevector-u8-set! (bv (iset-check-limit is e)) e 1))
 
-;; Remove an element.  If the element was present, return 'cl:T, otherwise 'cl:NIL.
+;; Remove an element.  If the element was present, return #t, otherwise #f.
 (define (integer-set-delete! is e)
   (let ((old (bytevector-u8-ref (bv (iset-check-limit is e)) e)))
     (bytevector-u8-set! (bv (iset-check-limit is e)) e 0)
@@ -59,7 +60,7 @@
   (let ((bv (bv (iset-check is))))
     (count-up (i 0 (limit is))
       (if (= 1 (bytevector-u8-ref bv i))
-        (cl:funcall proc i)))))
+        (_proc i)))))
 
 ;; Integer-set fold.  Returns nil if the integer-set is empty.
 (define (integer-set-fold proc nil is)
@@ -68,7 +69,7 @@
         (r nil))
     (count-up (i 0 (limit is))
       (if (= 1 (bytevector-u8-ref bv i))
-        (set! r (cl:funcall proc i r))))
+        (set! r (_proc i r))))
     r))
 
 ;; Integer-set-specific: fast copy
@@ -92,33 +93,33 @@
 (define (integer-set-min is)
   (iset-check is)
   (let ((bv (bv is)))
-    (count-up (return 'cl:NIL) (i 0 (limit is))
+    (count-up (return #f) (i 0 (limit is))
       (if (= 1 (bytevector-u8-ref bv i))
-         (cl:funcall return i)))))
+         (_return i)))))
 
 ;; Integer-set-specific: return and delete smallest value of is
 (define (integer-set-delete-min! is)
   (iset-check is)
   (let ((bv (bv is)))
-    (count-up (return 'cl:NIL) (i 0 (limit is))
+    (count-up (return #f) (i 0 (limit is))
       (if (= 1 (bytevector-u8-ref bv i))
-         (begin (bytevector-u8-set! bv i 0) (cl:funcall return i))))))
+         (begin (bytevector-u8-set! bv i 0) (_return i))))))
 
 ;; Integer-set-specific: return largest value of is
 (define (integer-set-max is)
   (iset-check is)
   (let ((bv (bv is)))
-    (count-down (return 'cl:NIL) (i 0 (limit is))
+    (count-down (return #f) (i 0 (limit is))
       (if (= 1 (bytevector-u8-ref bv i))
-         (cl:funcall return i)))))
+         (_return i)))))
 
 ;; Integer-set-specific: return and delete largest value of is
 (define (integer-set-delete-max! is)
   (iset-check is)
   (let ((bv (bv is)))
-    (count-down (return 'cl:NIL) (i 0 (limit is))
+    (count-down (return #f) (i 0 (limit is))
       (if (= 1 (bytevector-u8-ref bv i))
-         (begin (bytevector-u8-set! bv i 0) (cl:funcall return i))))))
+         (begin (bytevector-u8-set! bv i 0) (_return i))))))
 
 ;;; These procedures do not directly depend on the underlying representation.
 
@@ -135,7 +136,7 @@
 ;; Internal: check that the limits of is1 and is2 are the same.
 (define (iset-check-limits is1 is2)
   (if (= (limit is1) (limit is2))
-    'cl:T
+    #t
     (error "Integer-sets have different limits" is1 is2)))
 
 ;; Create an integer-set with a specified limit and populate it.
@@ -148,7 +149,7 @@
 ;; Map a function over an integer-set.
 (define (integer-set-map limit proc is)
   (let ((t (make-integer-set limit)))
-    (integer-set-for-each (lambda (e) (integer-set-add! t (cl:funcall proc e))) (iset-check is))
+    (integer-set-for-each (lambda (e) (integer-set-add! t (_proc e))) (iset-check is))
     t))
 
 ;; Return a list of the integer-set members.
@@ -161,60 +162,60 @@
     (for-each (lambda (e) (integer-set-add! t e)) list)
     t))
 
-;; Return 'cl:T if all sets are equal, 'cl:NIL otherwise.
+;; Return #t if all sets are equal, #f otherwise.
 (define (integer-set=? is . sets)
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-integer-set=? (iset-check is) (car sets))
      (apply #'integer-set=? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of integer-set=?.
 (define (dyadic-integer-set=? is1 is2)
   (iset-check-limits is1 is2)
   (and (dyadic-integer-set<=? is1 is2) (dyadic-integer-set>=? is1 is2)))
 
-;; Return 'cl:T if each integer-set is a proper subset of the following integer-set.
+;; Return #t if each integer-set is a proper subset of the following integer-set.
 (define (integer-set<? is . sets)
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-integer-set<? (iset-check is) (car sets))
      (apply #'integer-set<? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of integer-set<?.
 (define (dyadic-integer-set<? is1 is2)
   (iset-check-limits is1 is2)
   (not (dyadic-integer-set>=? is1 is2)))
 
-;; Return 'cl:T if each integer-set is a proper superset of the following integer-set.
+;; Return #t if each integer-set is a proper superset of the following integer-set.
 (define (integer-set>? is . sets)
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-integer-set>? (iset-check is) (car sets))
      (apply #'integer-set>? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of integer-set>?.
 (define (dyadic-integer-set>? is1 is2)
   (iset-check-limits is1 is2)
   (not (dyadic-integer-set<=? is1 is2)))
 
-;; Return 'cl:T if each integer-set is a subset (proper or improper) of the following integer-set.
+;; Return #t if each integer-set is a subset (proper or improper) of the following integer-set.
 (define (integer-set<=? is . sets)
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-integer-set<=? (iset-check is) (car sets))
      (apply #'integer-set<=? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of integer-set<=?.
 (define (dyadic-integer-set<=? is1 is2)
@@ -223,19 +224,19 @@
     (lambda (return)
       (integer-set-for-each
         (lambda (e)
-          (if (integer-set-member? is2 e) 'cl:T (cl:funcall return 'cl:NIL)))
+          (if (integer-set-member? is2 e) #t (_return #f)))
         is1)
-      'cl:T)))
+      #t)))
 
 (define (integer-set>=? is . sets)
-;; Return 'cl:T if each integer-set is a superset (proper or improper) of the following integer-set.
+;; Return #t if each integer-set is a superset (proper or improper) of the following integer-set.
   (cond
     ((null? sets)
-     'cl:T)
+     #t)
     ((dyadic-integer-set>=? (iset-check is) (car sets))
      (apply #'integer-set=? (car sets) (cdr sets)))
     (else
-     'cl:NIL)))
+     #f)))
 
 ;; Internal: dyadic version of integer-set>=?.
 (define (dyadic-integer-set>=? is1 is2)
@@ -273,7 +274,7 @@
   (iset-check-limits is1 is2)
   (integer-set-for-each
     (lambda (e)
-      (if (integer-set-member? is2 e) 'cl:T (integer-set-delete! is1 e)))
+      (if (integer-set-member? is2 e) #t (integer-set-delete! is1 e)))
     is1)
   is1)
 
@@ -312,24 +313,24 @@
 (define (integer-set-unfold limit continue? mapper successor seed)
   (let loop ((s (make-integer-set limit))
              (seed seed))
-    (if (cl:funcall continue? seed)
-      (let ((r (cl:funcall mapper seed)))
+    (if (_continue? seed)
+      (let ((r (_mapper seed)))
         (integer-set-add! s r)
-        (loop s (cl:funcall successor seed)))
+        (loop s (_successor seed)))
       s)))
 
 ;; Filter and partition integer-set
 (define (integer-set-filter proc s)
   (let ((t (integer-set-empty-copy s)))
     (integer-set-for-each
-      (lambda (x) (if (cl:funcall proc x) (integer-set-add! t x)))
+      (lambda (x) (if (_proc x) (integer-set-add! t x)))
       s)
     t))
 
 (define (integer-set-remove proc s)
   (let ((t (integer-set-empty-copy s)))
     (integer-set-for-each
-      (lambda (x) (if (not (cl:funcall proc x)) (integer-set-add! t x)))
+      (lambda (x) (if (not (_proc x)) (integer-set-add! t x)))
       s)
     t))
 
@@ -338,7 +339,7 @@
         (no (integer-set-empty-copy s)))
     (integer-set-for-each
       (lambda (x)
-        (if (cl:funcall proc x) (integer-set-add! yes x) (integer-set-add! no x)))
+        (if (_proc x) (integer-set-add! yes x) (integer-set-add! no x)))
       s)
     (values yes no)))
 
@@ -347,7 +348,7 @@
   (let ((n 0))
     (integer-set-for-each
       (lambda (x)
-        (if (cl:funcall proc x) (set! n (+ n 1))))
+        (if (_proc x) (set! n (+ n 1))))
       is)
     n))
 
