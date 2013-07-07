@@ -7,6 +7,7 @@
   :depends-on (:fiveam
                :named-readtables
                :rnrs-compat
+               :srfi-4
                :srfi-69
                :srfi-9
                :srfi-23
