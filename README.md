@@ -1,4 +1,4 @@
-* SRFI 113: Sets, bags, integer sets, enumeration sets 
+# SRFI 113 for CL: Sets, bags, integer sets, enumeration sets 
 
 - Copyright (C) John Cowan 2013. All Rights Reserved.
 

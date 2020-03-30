@@ -1,4 +1,4 @@
-(cl:in-package :srfi-113.internal)
+(cl:in-package "https://github.com/g000001/srfi-113#internals")
 (in-readtable :rnrs)
 
 ;;;; Implementation of bags for SRFI xxx

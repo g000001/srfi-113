@@ -1,10 +1,7 @@
-(cl:in-package :srfi-113.internal)
+(cl:in-package "https://github.com/g000001/srfi-113#internals")
 (in-readtable :rnrs)
 
-(def-suite srfi-113)
-
-
-(in-suite srfi-113)
+(def-suite* srfi-113)
 
 
 (define-syntax t=
@@ -759,5 +756,3 @@
 
 
 ;;; *EOF*
-
-

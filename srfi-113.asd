@@ -2,19 +2,25 @@
 
 (cl:in-package :asdf)
 
+
 (defsystem :srfi-113
+  :version "20200331"
+  :description "SRFI 113 for CL: Sets, bags, integer sets, enumeration sets"
+  :long-description "SRFI 113 for CL: Sets, bags, integer sets, enumeration sets
+https://srfi.schemers.org/srfi-113"
+  :author "John Cowan"
+  :maintainer "CHIBA Masaomi"
   :serial t
-  :depends-on (:fiveam
-               :named-readtables
-               :rnrs-compat
-               :srfi-4
-               :srfi-69
-               :srfi-9
-               :srfi-23
-               :srfi-13
-               :srfi-39
-               :mbe
-               )
+  :depends-on (fiveam
+               named-readtables
+               rnrs-compat
+               srfi-4
+               srfi-69
+               srfi-9
+               srfi-23
+               srfi-13
+               srfi-39
+               mbe)
   :components ((:file "package")
                (:file "count")
                (:file "srfi-4-shim")
@@ -22,15 +28,30 @@
                (:file "bags-impl")
                (:file "isets-impl")
                (:file "enums-impl")
-               (:file "srfi-113")
                (:file "sets-test")))
 
-(defmethod perform ((o test-op) (c (eql (find-system :srfi-113))))
-  (load-system :srfi-113)
-  (or (flet ((_ (pkg sym)
-               (intern (symbol-name sym) (find-package pkg))))
-         (let ((result (funcall (_ :fiveam :run) (_ :srfi-113.internal :srfi-113))))
-           (funcall (_ :fiveam :explain!) result)
-           (funcall (_ :fiveam :results-status) result)))
-      (error "test-op failed") ))
 
+(defmethod perform :after ((o load-op) (c (eql (find-system :srfi-113))))
+  (let ((name "https://github.com/g000001/srfi-113")
+        (nickname :srfi-113))
+    (if (and (find-package nickname)
+             (not (eq (find-package nickname)
+                      (find-package name))))
+        (warn "~A: A package with name ~A already exists." name nickname)
+        (rename-package name name `(,nickname)))))
+
+
+(defmethod perform ((o test-op) (c (eql (find-system :srfi-113))))
+  (let ((*package*
+         (find-package
+          "https://github.com/g000001/srfi-113#internals")))
+    (eval
+     (read-from-string
+      "
+      (or (let ((result (run 'srfi-113)))
+            (explain! result)
+            (results-status result))
+          (error \"test-op failed\") )"))))
+
+
+;;; *EOF*
